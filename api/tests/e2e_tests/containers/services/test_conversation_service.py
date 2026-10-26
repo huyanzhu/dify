@@ -558,7 +558,7 @@ class TestConversationServiceSummarization:
         assert conversation.name == generated_name  # Name updated on conversation object
         # Verify LLM was called with correct parameters
         mock_llm_generator.assert_called_once_with(
-            app_model.tenant_id, first_message.query, conversation.id, app_model.id
+            app_model.tenant_id, first_message.query, conversation.id, app_model.id, trace_scope=None
         )
 
     def test_auto_generate_name_raises_error_when_no_message(self, db_session_with_containers: Session):
