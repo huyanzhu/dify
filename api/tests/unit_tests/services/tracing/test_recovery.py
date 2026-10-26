@@ -1008,32 +1008,31 @@ def test_no_final_marker_or_paused_message_is_not_recovered(case: RecoveryCase, 
 
 def add_workflow_run(case: RecoveryCase, status: WorkflowExecutionStatus, *, finished: bool, created_by: str) -> str:
     workflow_run_id = identifier("recover-workflow-run")
+    workflow_run = WorkflowRun(
+        id=workflow_run_id,
+        tenant_id=case.collection.run.tenant_id,
+        app_id=case.collection.run.app_id,
+        workflow_id=identifier("workflow"),
+        type=WorkflowType.WORKFLOW,
+        triggered_from=WorkflowRunTriggeredFrom.APP_RUN,
+        version="1",
+        graph="{}",
+        inputs="{}",
+        outputs=json.dumps({"result": "persisted workflow output"}),
+        status=status,
+        error="actual workflow failure"
+        if status in {WorkflowExecutionStatus.FAILED, WorkflowExecutionStatus.STOPPED}
+        else None,
+        created_by=created_by,
+        created_by_role=CreatorUserRole.ACCOUNT,
+        finished_at=case.now - timedelta(seconds=10) if finished else None,
+        elapsed_time=20,
+        total_tokens=0,
+        total_steps=0,
+    )
+    workflow_run.created_at = case.now - timedelta(seconds=30)
     with case.collection.sessions.begin() as session:
-        session.add(
-            WorkflowRun(
-                id=workflow_run_id,
-                tenant_id=case.collection.run.tenant_id,
-                app_id=case.collection.run.app_id,
-                workflow_id=identifier("workflow"),
-                type=WorkflowType.WORKFLOW,
-                triggered_from=WorkflowRunTriggeredFrom.APP_RUN,
-                version="1",
-                graph="{}",
-                inputs="{}",
-                outputs=json.dumps({"result": "persisted workflow output"}),
-                status=status,
-                error="actual workflow failure"
-                if status in {WorkflowExecutionStatus.FAILED, WorkflowExecutionStatus.STOPPED}
-                else None,
-                created_by=created_by,
-                created_by_role=CreatorUserRole.ACCOUNT,
-                created_at=case.now - timedelta(seconds=30),
-                finished_at=case.now - timedelta(seconds=10) if finished else None,
-                elapsed_time=20,
-                total_tokens=0,
-                total_steps=0,
-            )
-        )
+        session.add(workflow_run)
     return workflow_run_id
 
 

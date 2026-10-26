@@ -61,9 +61,15 @@ _T0 = datetime(2024, 1, 10, 12, 0, 0, tzinfo=UTC)
 _T1 = datetime(2024, 1, 10, 12, 0, 5, tzinfo=UTC)
 
 
+def _workflow_run() -> WorkflowRun:
+    run = WorkflowRun(id="run-001", finished_at=_T1)
+    run.created_at = _T0
+    return run
+
+
 def make_workflow_info(**overrides) -> WorkflowTraceInfo:
     defaults: dict[str, Any] = {
-        "workflow_data": WorkflowRun(id="run-001", created_at=_T0, finished_at=_T1),
+        "workflow_data": _workflow_run(),
         "node_executions": [],
         "conversation_id": None,
         "message_started_at": None,

@@ -80,6 +80,12 @@ def _node(execution_id: str, node_type: str, *, index: int, offset: int, **field
     )
 
 
+def _workflow_run() -> WorkflowRun:
+    run = WorkflowRun(id=WORKFLOW_RUN_ID, finished_at=STARTED_AT + timedelta(seconds=3))
+    run.created_at = STARTED_AT
+    return run
+
+
 def _workflow_record(*, message_id: str | None, metadata: dict[str, object]) -> WorkflowTraceInfo:
     llm = _node(
         "exec-llm",
@@ -98,9 +104,7 @@ def _workflow_record(*, message_id: str | None, metadata: dict[str, object]) -> 
     start = _node("exec-start", BuiltinNodeTypes.START, index=1, offset=0, inputs={"query": "hi"})
     return WorkflowTraceInfo(
         message_id=message_id,
-        workflow_data=WorkflowRun(
-            id=WORKFLOW_RUN_ID, created_at=STARTED_AT, finished_at=STARTED_AT + timedelta(seconds=3)
-        ),
+        workflow_data=_workflow_run(),
         node_executions=[llm, start],
         conversation_id=CONVERSATION_ID if message_id else None,
         message_started_at=STARTED_AT - timedelta(seconds=1) if message_id else None,
