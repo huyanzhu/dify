@@ -2037,23 +2037,25 @@ def test_agent_chat_helper_rejects_foreign_debug_conversation_before_generation(
         "_resolve_current_user_agent_debug_conversation_id",
         resolve_debug_conversation,
     )
-    with app.test_request_context(
-        json={
-            "inputs": {},
-            "query": "hello",
-            "response_mode": "streaming",
-            "conversation_id": "00000000-0000-0000-0000-000000000001",
-            **payload_extra,
-        }
+    with (
+        app.test_request_context(
+            json={
+                "inputs": {},
+                "query": "hello",
+                "response_mode": "streaming",
+                "conversation_id": "00000000-0000-0000-0000-000000000001",
+                **payload_extra,
+            }
+        ),
+        pytest.raises(NotFound),
     ):
-        with pytest.raises(NotFound):
-            completion_controller._create_chat_message(
-                current_tenant_id="tenant-1",
-                current_user=_account(account_id=account_id),
-                app_model=app_model,
-                agent_id="agent-1",
-                session=unbound_session,
-            )
+        completion_controller._create_chat_message(
+            current_tenant_id="tenant-1",
+            current_user=_account(account_id=account_id),
+            app_model=app_model,
+            agent_id="agent-1",
+            session=unbound_session,
+        )
 
     resolve_debug_conversation.assert_called_once()
     resolve_call = resolve_debug_conversation.call_args.kwargs
@@ -2199,11 +2201,10 @@ def test_agent_chat_helper_maps_generation_errors(
 ) -> None:
     app_model = _app_detail_obj(id="app-1", mode=AppMode.CHAT)
     monkeypatch.setattr(completion_controller.AppGenerateService, "generate", lambda **_: (_ for _ in ()).throw(error))
-    with app.test_request_context(json={"inputs": {}, "query": "hello"}):
-        with pytest.raises(expected):
-            completion_controller._create_chat_message(
-                current_user=_account(), app_model=app_model, session=unbound_session
-            )
+    with app.test_request_context(json={"inputs": {}, "query": "hello"}), pytest.raises(expected):
+        completion_controller._create_chat_message(
+            current_user=_account(), app_model=app_model, session=unbound_session
+        )
 
 
 def test_agent_chat_message_routes_resolve_app_from_agent_id(
@@ -2366,14 +2367,16 @@ def test_list_agent_chat_messages_rejects_foreign_conversation(
         "get_conversation",
         lambda **kwargs: (_ for _ in ()).throw(message_controller.ConversationNotExistsError()),
     )
-    with app.test_request_context(f"/console/api/agent/agent-1/chat-messages?conversation_id={conversation_id}"):
-        with pytest.raises(NotFound):
-            message_controller._list_chat_messages(
-                args=message_controller.ChatMessagesQuery(conversation_id=conversation_id),
-                session=unbound_session,
-                app_model=_app_detail_obj(id="app-1", mode=AppMode.AGENT),
-                current_user=_account(),
-            )
+    with (
+        app.test_request_context(f"/console/api/agent/agent-1/chat-messages?conversation_id={conversation_id}"),
+        pytest.raises(NotFound),
+    ):
+        message_controller._list_chat_messages(
+            args=message_controller.ChatMessagesQuery(conversation_id=conversation_id),
+            session=unbound_session,
+            app_model=_app_detail_obj(id="app-1", mode=AppMode.AGENT),
+            current_user=_account(),
+        )
 
 
 def test_dify_tool_candidate_response_keeps_granularity_fields() -> None:
